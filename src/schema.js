@@ -9,6 +9,7 @@ const typeDefs = gql`
         accountNumber: String!
         commitmentGroups:[CommitmentGroup]!
         hasPaid: Boolean!
+        scores: [Score]!
     }
 
     type CommitmentGroup {
@@ -25,6 +26,9 @@ const typeDefs = gql`
         id:ID!
         clusterName: String!
         clusterMembers: [User!]!
+        clusterHeadMember: User!
+        clusterScore: Int!
+        reward: Int!
     }
 
     type Commitment {
@@ -34,4 +38,12 @@ const typeDefs = gql`
         stake: Int!
     }
 
+    type Score {
+        id: ID!
+        clusterID: ID!
+        points: Int!
+    }
+
 `
+
+module.exports = typeDefs

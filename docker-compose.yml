@@ -1,0 +1,27 @@
+version: "3.7"
+
+services:
+  # Backend API
+  clustite-backend-api:
+    build: ./
+    command: npm start
+    container_name: backend
+    environment:
+      POSTGRES_URI: postgres://emmanuelakhigbe:secret@postgres:5432/clustite-pg-database
+    links:
+      - postgres
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./:/usr/src/clustite-backend
+    working_dir: /usr/src/clustite-backend
+  # PostgreSQL service
+  postgres:
+    environment:
+      POSTGRES_USER: emmanuelakhigbe
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: clustite-pg-database
+      POSTGRES_HOST: postgres
+    build: ./src/datasources/postgres
+    ports:
+      - "5432:5432"

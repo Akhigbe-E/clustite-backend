@@ -1,71 +1,89 @@
-const { SQLDataSource } = require("datasource-sql");
-
-const MINUTE = 60;
+const { SQLDataSource } = require("datasource-sql")
+const { clusterReducer, userReducer, commitmentGroupReducer } = require('./reducers');
 
 class ClustiteDatabase extends SQLDataSource {
-    getCommitmentGroups() {
+
+    ////////////////////// COMMITMENT //////////////////////
+
+    //// Commitment => Query
+    getAllCommitmentGroups() {
         return this.knex
             .select('*')
             .from("commitment_groups").then(data => {
-                return Array.isArray(data) ? data.map(group => this.commitmentGroupReducer(group)) : []
+                return Array.isArray(data) ? data.map(group => commitmentGroupReducer(group)) : []
             })
     }
+    getCommitmentGroups(commitmentGroupIDs) {
+        return this.knex
+            .select('*')
+            .from("commitment_groups")
+            .whereIn('id', commitmentGroupIDs)
+            .then(data => {
+                return Array.isArray(data) ? data.map(group => commitmentGroupReducer(group)) : []
+            })
+    }
+    getCommitmentGroupMembers(commitmentGroupID) {
+        return this.getIDOfMembersOfCommitment(commitmentGroupID)
+            .then(userIDsObjs => {
+                let userIDs = userIDsObjs.map(({ user_id }) => user_id)
+                return this.getUsers(userIDs)
+            })
+            .then(data => {
+                return Array.isArray(data) ? data.map(data => userReducer(data)) : []
+            })
+    }
+    getJoinedCommitmentGroups(userID) {
+        return this.getIDOfJoinedCommitmentGroup(userID).then(commitmentGroupIDObjs => {
+            let commitmentGroupIDs = commitmentGroupIDObjs.map(({ commitment_group_id }) => commitment_group_id)
+            return this.getCommitmentGroups(commitmentGroupIDs)
+        })
+    }
+
+    //Commitment => Mutation
+
+
+
+    ////////////////////// ID //////////////////////
+
     getIDOfMembersOfCommitment(commitmentGroupID) {
         return this.knex.select('user_id').from('user_commitment_ids').where({ commitment_group_id: commitmentGroupID })
     }
-    getUsers({ user_id }) {
-        console.log(user_id)
-        return this.knex.select('*').from('users').whereIn('id', [user_id])
+    getIDOfMembersOfCluster(clusterID) {
+        return this.knex.select('user_id').from('user_cluster_ids').where({ cluster_id: clusterID })
     }
-    getCommitmentGroupMembers(commitmentGroupID) {
-        console.log(commitmentGroupID)
-        return this.getIDOfMembersOfCommitment(commitmentGroupID)
-            .then(userIDs => this.getUsers(...userIDs))
-            .then(data => {
-                return Array.isArray(data) ? data.map(data => this.userReducer(data)) : []
-            })
+    getIDOfJoinedCommitmentGroup(userID) {
+        return this.knex.select('commitment_group_id').from("user_commitment_ids").where({ user_id: userID })
     }
 
+
+
+    ////////////////////// USERS //////////////////////
+
+    getUsers(user_ids) {
+        return this.knex.select('*').from('users').whereIn('id', user_ids)
+    }
+
+
+
+    ////////////////////// CLUSTER //////////////////////
+
+    getClusterMembers(clusterID) {
+        return this.getIDOfMembersOfCluster(clusterID)
+            .then(userIDsObjs => {
+                let userIDs = userIDsObjs.map(({ user_id }) => user_id)
+                return this.getUsers(userIDs)
+                    .then(data => {
+                        return Array.isArray(data) ? data.map(data => userReducer(data)) : []
+                    })
+            })
+    }
     getClusters(commitmentID) {
         return this.knex.select('*')
             .from('clusters')
             .where({ commitment_group_id: commitmentID })
-            .then(data => Array.isArray(data) ? data.map(data => this.clusterReducer(data)) : [])
+            .then(data => Array.isArray(data) ? data.map(data => clusterReducer(data)) : [])
     }
 
-    clusterReducer({ id, commitment_group_id, cluster_name, cluster_score, reward }) {
-        return {
-            id,
-            clusterName: cluster_name,
-            clusterScore: cluster_score,
-            reward
-            // Stopped HERE!!
-        }
-    }
-
-    userReducer({ id, username, matric_number, account_number, has_paid }) {
-        return {
-            id,
-            name: username,
-            matricNumber: matric_number,
-            accountNumber: account_number,
-            hasPaid: has_paid
-        }
-    }
-
-    commitmentGroupReducer({ id, group_name, group_type, group_joining_code, commitment_name, commitment_description, stake }) {
-        return {
-            id,
-            groupName: group_name,
-            typeOfGroup: group_type,
-            groupJoiningCode: group_joining_code,
-            groupMembers: this.getCommitmentGroupMembers(id),
-            clusters: this.getClusters(id),
-            commitmentName: commitment_name,
-            commitmentDescription: commitment_description,
-            stake
-        }
-    }
 }
 
 module.exports = ClustiteDatabase;

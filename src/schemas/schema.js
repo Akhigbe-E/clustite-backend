@@ -27,6 +27,7 @@ const typeDefs = gql`
 
     type Cluster {
         id:ID!
+        commitmentGroupID: ID!
         clusterName: String!
         clusterMembers: [User!]!
         clusterHeadMember: User!
@@ -43,7 +44,6 @@ const typeDefs = gql`
     type Query {
         allCommitmentGroups: [CommitmentGroup]!
         joinedCommitmentGroups(participantId: ID): [CommitmentGroup]!
-        commitmentGroupParticipant(participantId: ID!): User
         commitmentGroupParticipants(commitmentGroupId: ID!): [User]!
         clusterParticipants(clusterId: ID!): [User]
         clusters(commitmentGroupId: ID!): [Cluster]!

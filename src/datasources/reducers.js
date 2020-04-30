@@ -1,6 +1,6 @@
 module.exports = {
-    clusterReducer({ id, commitment_group_id, cluster_name, cluster_score, reward }) {
-        let clusterMembers = () => this.getClusterMembers(id)
+    clusterReducer({ id, commitment_group_id, cluster_name, cluster_score, reward }, getClusterMembers) {
+        let clusterMembers = () => getClusterMembers(id)
         return {
             id,
             commitmentGroupID: commitment_group_id,
@@ -10,8 +10,8 @@ module.exports = {
             reward
         }
     },
-    userReducer({ id, username, matric_number, account_number, has_paid }) {
-        let commitmentGroups = () => this.getJoinedCommitmentGroups(id)
+    userReducer({ id, username, matric_number, account_number, has_paid }, getJoinedCommitmentGroups) {
+        let commitmentGroups = () => getJoinedCommitmentGroups(id)
         return {
             id,
             name: username,
@@ -21,9 +21,9 @@ module.exports = {
             hasPaid: has_paid
         }
     },
-    commitmentGroupReducer({ id, group_name, group_type, group_joining_code, commitment_name, commitment_description, stake }) {
-        let groupMembers = () => this.getCommitmentGroupMembers(id)
-        let clusters = () => this.getClusters(id)
+    commitmentGroupReducer({ id, group_name, group_type, group_joining_code, commitment_name, commitment_description, stake }, getCommitmentGroupMembers, getClusters) {
+        let groupMembers = () => getCommitmentGroupMembers(id)
+        let clusters = () => getClusters(id)
         return {
             id,
             groupName: group_name,

@@ -19,5 +19,17 @@ module.exports = {
         clusters: (_, { commitmentGroupId }, { dataSources }) => {
             return dataSources.db.getClusters(commitmentGroupId)
         },
+    },
+
+    Mutation: {
+        registerAccount: (_, details, { dataSources }) => {
+            return dataSources.db.registerAccount(details)
+        },
+        login: (_, details, { dataSources }) => {
+            return dataSources.db.logIntoAccount(details)
+        },
+        createCommitmentGroup: (_, details, { dataSources }) => {
+            return dataSources.db.createCommitmentGroup(details)
+        },
     }
 }

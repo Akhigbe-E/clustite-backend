@@ -14,6 +14,7 @@ services:
       - "4000:4000"
     volumes:
       - ./:/usr/src/clustite-backend
+      - /usr/src/clustite-backend/node_modules
     working_dir: /usr/src/clustite-backend
   # PostgreSQL service
   postgres:

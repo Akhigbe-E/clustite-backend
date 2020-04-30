@@ -50,12 +50,12 @@ const typeDefs = gql`
     }
 
     type Mutation {
-        register(
+        registerAccount(
             name: String! 
             matricNumber: String! 
             password: String! 
             accountNumber: String!
-        ): AccountRelatedResponse!
+        ): AccountRelatedResponse
 
         login(
             matricNumber: String! 
@@ -65,7 +65,7 @@ const typeDefs = gql`
         createCommitmentGroup(
             groupName: String!,
             typeOfGroup: String!,
-            groupEntryCode: String,
+            groupJoiningCode: String,
             commitmentName: String!,
             commitmentDescription: String!,
             stake: Int!

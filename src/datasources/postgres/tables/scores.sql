@@ -3,8 +3,10 @@ BEGIN TRANSACTION;
 CREATE TABLE scores
 (
     id serial PRIMARY KEY,
-    cluster_id VARCHAR(100) NOT NULL,
-    score INTEGER
+    user_id VARCHAR(100),
+    commitment_group_id VARCHAR(100),
+    cluster_id VARCHAR(100),
+    points INTEGER
 );
 
 COMMIT;

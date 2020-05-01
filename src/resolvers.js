@@ -1,7 +1,7 @@
 module.exports = {
     Query: {
-        allCommitmentGroups: async (_, __, { dataSources }) => {
-            return await dataSources.db.getAllCommitmentGroups()
+        allCommitmentGroups: (_, __, { dataSources }) => {
+            return dataSources.db.getAllCommitmentGroups()
         },
 
         joinedCommitmentGroups: (_, { participantId }, { dataSources }) => {
@@ -22,14 +22,23 @@ module.exports = {
     },
 
     Mutation: {
-        registerAccount: (_, details, { dataSources }) => {
-            return dataSources.db.registerAccount(details)
+        registerAccount: async (_, details, { dataSources }) => {
+            return await dataSources.db.registerAccount(details)
         },
         login: (_, details, { dataSources }) => {
             return dataSources.db.logIntoAccount(details)
         },
         createCommitmentGroup: (_, details, { dataSources }) => {
             return dataSources.db.createCommitmentGroup(details)
+        },
+        enterScore: (_, details, { dataSources }) => {
+            return dataSources.db.enterScore(details)
+        },
+        joinCommitmentGroup: (_, details, { dataSources }) => {
+            return dataSources.db.joinCommitmentGroup(details)
+        },
+        updateProfile: (_, details, { dataSources }) => {
+            return dataSources.db.updateUserProfile(details)
         },
     }
 }

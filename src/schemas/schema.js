@@ -8,7 +8,6 @@ const typeDefs = gql`
         password: String!
         accountNumber: String!
         commitmentGroups:[CommitmentGroup]!
-        hasPaid: Boolean!
         scores: [Score]!
     }
 
@@ -38,6 +37,7 @@ const typeDefs = gql`
 
     type Score {
         id: ID!
+        commitmentGroupID: ID!
         clusterID: ID!
         points: Int!
     }
@@ -74,20 +74,29 @@ const typeDefs = gql`
         ): CommitmentGroupRelatedResponse!
 
         updateProfile(
-            accountId: ID!
+            userID: ID!
             name: String
+            matricNumber: String!
             accountNumber: String
             password: String
         ): AccountRelatedResponse!
 
         enterScore(
+            userID: ID!
+            commitmentGroupID: ID!
             clusterID: ID!
-            score: Int!
+            points: Int!
         ): ScoreEnterResponse!
 
         joinCommitmentGroup(
-            joiningCode: String
-        ): CommitmentGroupRelatedResponse
+            userID: ID!
+            commitmentGroupID: ID!
+        ): JoinGroupResponse!
+    }
+
+    type JoinGroupResponse {
+        success: Boolean!
+        addedID: ID
     }
 
     type CommitmentGroupRelatedResponse {

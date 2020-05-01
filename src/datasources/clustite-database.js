@@ -44,6 +44,7 @@ class ClustiteDatabase extends SQLDataSource {
     //Commitment => Mutation
     createCommitmentGroup(details) {
         const {
+            ownerID,
             groupName,
             typeOfGroup,
             groupJoiningCode,
@@ -52,6 +53,7 @@ class ClustiteDatabase extends SQLDataSource {
             stake } = details
 
         return this.knex('commitment_groups').insert({
+            owner_id: ownerID,
             group_name: groupName,
             group_type: typeOfGroup,
             group_joining_code: groupJoiningCode,
@@ -59,16 +61,17 @@ class ClustiteDatabase extends SQLDataSource {
             commitment_description: commitmentDescription,
             stake
         }).then(commitmentGroup => {
+            console.log(commitmentGroup)
             return {
                 success: true,
                 message: "Commitment group successfully created",
-                commitmentGroup: this.getCommitmentGroups([commitmentGroup])
+                commitmentGroup: commitmentGroupReducer(commitmentGroup, this.getCommitmentGroupMembers, this.getClusters)
             }
         }).catch(err => {
             return {
                 success: false,
                 message: "Commitment group creation unsuccessful",
-                commitmentGroup: []
+                commitmentGroup: null
             }
         })
 
@@ -132,7 +135,7 @@ class ClustiteDatabase extends SQLDataSource {
                             return {
                                 success: true,
                                 message: `Account with matric number ${matricNumber} has been created`,
-                                user: () => this.getUser(user.id)
+                                user: () => userReducer(user, this.getJoinedCommitmentGroups)
                             }
                         })
                         .then(trx.commit)

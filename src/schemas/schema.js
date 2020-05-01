@@ -14,6 +14,7 @@ const typeDefs = gql`
 
     type CommitmentGroup {
         id: ID!
+        ownerID: ID!
         groupName: String!
         typeOfGroup: String!
         groupJoiningCode: String
@@ -63,6 +64,7 @@ const typeDefs = gql`
         ): String!
 
         createCommitmentGroup(
+            ownerID: ID!
             groupName: String!,
             typeOfGroup: String!,
             groupJoiningCode: String,

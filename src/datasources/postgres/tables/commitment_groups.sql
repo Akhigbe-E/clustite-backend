@@ -3,6 +3,7 @@ BEGIN TRANSACTION;
 CREATE TABLE commitment_groups
 (
     id serial PRIMARY KEY,
+    owner_id VARCHAR(100),
     group_name VARCHAR(100),
     group_type VARCHAR(7) NOT NULL,
     group_joining_code VARCHAR(30),

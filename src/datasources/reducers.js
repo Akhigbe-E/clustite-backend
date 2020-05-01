@@ -21,11 +21,12 @@ module.exports = {
             hasPaid: has_paid
         }
     },
-    commitmentGroupReducer({ id, group_name, group_type, group_joining_code, commitment_name, commitment_description, stake }, getCommitmentGroupMembers, getClusters) {
+    commitmentGroupReducer({ id, owner_id, group_name, group_type, group_joining_code, commitment_name, commitment_description, stake }, getCommitmentGroupMembers, getClusters) {
         let groupMembers = () => getCommitmentGroupMembers(id)
         let clusters = () => getClusters(id)
         return {
             id,
+            ownerID: owner_id,
             groupName: group_name,
             typeOfGroup: group_type,
             groupJoiningCode: group_joining_code,

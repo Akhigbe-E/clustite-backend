@@ -8,8 +8,11 @@ services:
     container_name: backend
     environment:
       POSTGRES_URI: postgres://emmanuelakhigbe:secret@postgres:5432/clustite-pg-database
+      REDIS_URI: redis://redis:6379
+      JWT_SECRET: "theMostSecureJWTSecret"
     links:
       - postgres
+      - redis
     ports:
       - "4000:4000"
     volumes:
@@ -25,3 +28,8 @@ services:
     build: ./src/datasources/postgres
     ports:
       - "5432:5432"
+  # Redis
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"

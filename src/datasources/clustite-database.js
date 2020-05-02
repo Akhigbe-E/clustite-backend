@@ -1,9 +1,16 @@
 const { SQLDataSource } = require("datasource-sql")
 const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
+
 
 // const { clusterReducer, userReducer, commitmentGroupReducer, scoreReducer } = require('./reducers');
 
 class ClustiteDatabase extends SQLDataSource {
+
+    constructor(knex, asyncRedisClient) {
+        super(knex)
+        this.redisClient = asyncRedisClient
+    }
     ////////////////////// COMMITMENT //////////////////////
 
     //// Commitment => Query
@@ -120,10 +127,11 @@ class ClustiteDatabase extends SQLDataSource {
     getUsers(user_ids) {
         return this.knex.select('*').from('users').whereIn('id', user_ids)
     }
-    getUser(user_id) {
+    getUser(userID) {
+        if (!userID) return undefined;
         return this.knex.select('*')
             .from('users')
-            .where('id', user_id)
+            .where('id', userID)
             .then(user => this.userReducer(user))
     }
 
@@ -155,7 +163,6 @@ class ClustiteDatabase extends SQLDataSource {
                             account_number: accountNumber,
                         })
                         .then(user => {
-                            console.log('oo')
                             return {
                                 success: true,
                                 message: `Account with matric number ${matricNumber} has been created`,
@@ -179,6 +186,29 @@ class ClustiteDatabase extends SQLDataSource {
         })
     }
 
+    signToken(matricNumber) {
+        return jwt.sign({ matricNumber }, `${process.env.JWT_SECRET}`, {
+            expiresIn: "2 days"
+        })
+    }
+
+    setToken(redisClient, key, value) {
+        return Promise.resolve(redisClient.set(key, value));
+    };
+
+    createSession(redisClient, user) {
+        const { id, matric_number } = user
+        const token = this.signToken(matric_number)
+        return this.setToken(redisClient, token, id)
+            .then(() => {
+                return {
+                    success: true,
+                    userID: id,
+                    token
+                }
+            }).catch(err => Promise.reject('Error while saving token'))
+    }
+
     logIntoAccount(details) {
         const { matricNumber, password } = details
         return this.knex
@@ -186,18 +216,32 @@ class ClustiteDatabase extends SQLDataSource {
             .from('login')
             .where('matric_number', matricNumber)
             .then(data => {
+                console.log(data)
+                console.log('IS VALID')
                 const isValid = bcrypt.compareSync(password, data[0].password_hash);
                 if (isValid) {
-                    return db
+                    return this.knex
                         .select("*")
                         .from("users")
-                        .where("email", "=", email)
-                        .then(user => {
-
+                        .where("matric_number", matricNumber)
+                        .then((user) => {
+                            console.log(user)
+                            return this.createSession(this.redisClient, user[0])
+                                .then(session => session)
                         })
-                        .catch(err => Promise.reject("unable to find user"));
+                        .catch(err => {
+                            return {
+                                success: false,
+                                userID: null,
+                                token: null
+                            }
+                        });
                 } else {
-                    Promise.reject("wrong credentials");
+                    return {
+                        success: false,
+                        userID: null,
+                        token: null
+                    }
                 }
             })
     }

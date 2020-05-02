@@ -1,44 +1,60 @@
 module.exports = {
+    CommitmentGrouporString: {
+        __resolveType(id, context, info) {
+            return context.authScope().then(({ id }) => {
+                if (id) {
+                    return 'CommitmentGroups';
+                }
+                return 'AuthenticationFailed';
+            })
+        },
+    },
     Query: {
-        allCommitmentGroups: (_, __, { dataSources }) => {
-            return dataSources.db.getAllCommitmentGroups()
+        allCommitmentGroups: (_, __, context) => {
+            return context.authScope().then(({ id }) => {
+                if (!id) return { status: "unauthorized" }
+                return { commitmentGroups: () => context.db.getAllCommitmentGroups() }
+            })
         },
 
-        joinedCommitmentGroups: (_, { participantId }, { dataSources }) => {
-            return dataSources.db.getJoinedCommitmentGroups(participantId)
+        joinedCommitmentGroups: (_, { participantId }, context) => {
+            return context.db.getJoinedCommitmentGroups(participantId)
         },
 
-        commitmentGroupParticipants: (_, { commitmentGroupId }, { dataSources }) => {
-            return dataSources.db.getCommitmentGroupMembers(commitmentGroupId)
+        commitmentGroupParticipants: (_, { commitmentGroupId }, context) => {
+            return context.db.getCommitmentGroupMembers(commitmentGroupId)
         },
 
-        clusterParticipants: (_, { clusterId }, { dataSources }) => {
-            return dataSources.db.getClusterMembers(clusterId)
+        clusterParticipants: (_, { clusterId }, context) => {
+            return context.db.getClusterMembers(clusterId)
         },
 
-        clusters: (_, { commitmentGroupId }, { dataSources }) => {
-            return dataSources.db.getClusters(commitmentGroupId)
+        clusters: (_, { commitmentGroupId }, context) => {
+            return context.db.getClusters(commitmentGroupId)
+        },
+        getUser: (_, { userID }, context) => {
+            return context.db.getUser(userID)
         },
     },
 
     Mutation: {
-        registerAccount: async (_, details, { dataSources }) => {
-            return await dataSources.db.registerAccount(details)
+        registerAccount: async (_, details, context) => {
+            return await context.db.registerAccount(details)
         },
-        login: (_, details, { dataSources }) => {
-            return dataSources.db.logIntoAccount(details)
+        login: (_, details, context) => {
+            return context.db.logIntoAccount(details)
         },
-        createCommitmentGroup: (_, details, { dataSources }) => {
-            return dataSources.db.createCommitmentGroup(details)
+        createCommitmentGroup: (_, details, context) => {
+            return context.db.createCommitmentGroup(details)
         },
-        enterScore: (_, details, { dataSources }) => {
-            return dataSources.db.enterScore(details)
+        enterScore: (_, details, context) => {
+            return context.db.enterScore(details)
         },
-        joinCommitmentGroup: (_, details, { dataSources }) => {
-            return dataSources.db.joinCommitmentGroup(details)
+        joinCommitmentGroup: (_, details, context) => {
+            return context.db.joinCommitmentGroup(details)
         },
-        updateProfile: (_, details, { dataSources }) => {
-            return dataSources.db.updateUserProfile(details)
+        updateProfile: (_, details, context) => {
+            return context.db.updateUserProfile(details)
         },
     }
 }

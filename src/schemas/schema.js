@@ -42,12 +42,22 @@ const typeDefs = gql`
         points: Int!
     }
 
+    type AuthenticationFailed{
+        status: String
+    }
+    type CommitmentGroups{
+        commitmentGroups: [CommitmentGroup]!
+    }
+
+    union CommitmentGrouporString = CommitmentGroups | AuthenticationFailed
+
     type Query {
-        allCommitmentGroups: [CommitmentGroup]!
+        allCommitmentGroups: CommitmentGrouporString
         joinedCommitmentGroups(participantId: ID): [CommitmentGroup]!
         commitmentGroupParticipants(commitmentGroupId: ID!): [User]!
         clusterParticipants(clusterId: ID!): [User]
         clusters(commitmentGroupId: ID!): [Cluster]!
+        getUser(userID: ID!): User
     }
 
     type Mutation {
@@ -61,7 +71,8 @@ const typeDefs = gql`
         login(
             matricNumber: String! 
             password: String! 
-        ): String!
+        ): Session!
+
 
         createCommitmentGroup(
             ownerID: ID!
@@ -115,6 +126,12 @@ const typeDefs = gql`
         success: Boolean!
         message: String!
         score: Score
+    }
+
+    type Session {
+        success: Boolean!,
+        userID: ID,
+        token: String
     }
 
 `

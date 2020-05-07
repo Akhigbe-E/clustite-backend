@@ -31,8 +31,12 @@ const server = new ApolloServer({
     context: ({ req }) => ({
         authScope: async () => {
             const { authorization } = req.headers
-            const value = await redisClient.get(authorization)
-            return { id: value }
+            if (authorization.substring(0, 6) === "Bearer") {
+                token = authorization.substring(7, authorization.length)
+                const value = await redisClient.get(token)
+                console.log(value)
+                return { id: value }
+            }
         },
         db
     })

@@ -6,7 +6,7 @@ const typeDefs = gql`
         name: String!
         email: String!
         matricNumber: String!
-        accountNumber: Int!
+        accountNumber: String!
         bankName: String!
         password: String!
         commitmentGroups:[CommitmentGroup]!
@@ -68,10 +68,10 @@ const typeDefs = gql`
             name: String!
             email: String!
             matricNumber: String!
-            accountNumber: Int!
+            accountNumber: String!
             bankName: String!
             password: String!
-        ): AccountRelatedResponse
+        ): Session!
 
         login(
             matricNumber: String! 
@@ -135,8 +135,9 @@ const typeDefs = gql`
 
     type Session {
         success: Boolean!,
-        userID: ID,
+        message: String!,
         token: String
+        userID: ID,
     }
 
 `

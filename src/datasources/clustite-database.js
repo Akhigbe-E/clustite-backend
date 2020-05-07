@@ -133,6 +133,20 @@ class ClustiteDatabase extends SQLDataSource {
     }
 
 
+    createSession(redisClient, user) {
+        const { id, matric_number } = user
+        const token = this.signToken(matric_number)
+        return this.setToken(redisClient, token, id)
+            .then(() => {
+                return {
+                    success: true,
+                    message: "Operation successful",
+                    userID: id,
+                    token
+                }
+            }).catch(err => Promise.reject('Error while saving token'))
+    }
+
 
 
     ////////////////////// USERS //////////////////////
@@ -155,8 +169,9 @@ class ClustiteDatabase extends SQLDataSource {
         if (!name || !matricNumber || !password || !accountNumber) {
             return {
                 success: false,
-                message: 'Incorrect account details',
-                user: null
+                message: 'Kindly fill all fields',
+                token: null,
+                userID: null
             }
         }
         const password_hash = bcrypt.hashSync(password, 10)
@@ -179,24 +194,23 @@ class ClustiteDatabase extends SQLDataSource {
                             bank_name: bankName
                         })
                         .then(user => {
-                            return {
-                                success: true,
-                                message: `Account with matric number ${matricNumber} has been created`,
-                                user: () => this.userReducer({ ...user[0], password_hash })
-                            }
+                            return this.createSession(this.redisClient, user[0])
+                                .then(session => session)
                         })
                         .catch(err => {
                             return {
                                 success: false,
-                                message: `Account creation failed`,
-                                user: null
+                                message: 'Account creation failed',
+                                token: null,
+                                userID: null
                             }
                         })
                 }).catch(err => {
                     return {
                         success: false,
-                        message: `Account creation failed`,
-                        user: null
+                        message: 'Account creation failed',
+                        token: null,
+                        userID: null
                     }
                 })
         })
@@ -212,19 +226,6 @@ class ClustiteDatabase extends SQLDataSource {
         return Promise.resolve(redisClient.set(key, value));
     };
 
-    createSession(redisClient, user) {
-        const { id, matric_number } = user
-        const token = this.signToken(matric_number)
-        return this.setToken(redisClient, token, id)
-            .then(() => {
-                return {
-                    success: true,
-                    userID: id,
-                    token
-                }
-            }).catch(err => Promise.reject('Error while saving token'))
-    }
-
     logIntoAccount(details) {
         const { matricNumber, password } = details
         return this.knex
@@ -232,8 +233,6 @@ class ClustiteDatabase extends SQLDataSource {
             .from('login')
             .where('matric_number', matricNumber)
             .then(data => {
-                console.log(data)
-                console.log('IS VALID')
                 const isValid = bcrypt.compareSync(password, data[0].password_hash);
                 if (isValid) {
                     return this.knex
@@ -241,22 +240,23 @@ class ClustiteDatabase extends SQLDataSource {
                         .from("users")
                         .where("matric_number", matricNumber)
                         .then((user) => {
-                            console.log(user)
                             return this.createSession(this.redisClient, user[0])
                                 .then(session => session)
                         })
                         .catch(err => {
                             return {
                                 success: false,
-                                userID: null,
-                                token: null
+                                message: "Login failed",
+                                token: null,
+                                userID: null
                             }
                         });
                 } else {
                     return {
                         success: false,
-                        userID: null,
-                        token: null
+                        message: "Login Failed",
+                        token: null,
+                        userID: null
                     }
                 }
             })

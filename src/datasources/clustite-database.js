@@ -50,6 +50,19 @@ class ClustiteDatabase extends SQLDataSource {
             return this.getCommitmentGroups(commitmentGroupIDs)
         })
     }
+    getRecommendedCommitmentGroups(userID) {
+        return this.getIDOfJoinedCommitmentGroup(userID).then(commitmentGroupIDObjs => {
+            let joinedCommitmentGroupIDs = commitmentGroupIDObjs.map(({ commitment_group_id }) => {
+                return commitment_group_id
+            })
+            return this.getCommitmentGroupWhereNotID(joinedCommitmentGroupIDs)
+        })
+    }
+    getCommitmentGroupWhereNotID(IDs) {
+        // const integerIDs = IDs.map(ID => parseInt(ID, 10))
+        // console.log(integerIDs)
+        return this.knex.select('*').from("commitment_groups").whereNotIn('id', [...IDs]).andWhere('group_type', 'public')
+    }
 
     //Commitment => Mutation
     createCommitmentGroup(details) {
@@ -121,6 +134,7 @@ class ClustiteDatabase extends SQLDataSource {
 
 
 
+
     ////////////////////// USERS //////////////////////
 
     //// Query
@@ -132,12 +146,12 @@ class ClustiteDatabase extends SQLDataSource {
         return this.knex.select('*')
             .from('users')
             .where('id', userID)
-            .then(user => this.userReducer(user))
+            .then(user => { return this.userReducer(user[0]) })
     }
 
 
     //// Mutation
-    registerAccount({ name, matricNumber, password, accountNumber }) {
+    registerAccount({ name, email, matricNumber, accountNumber, bankName, password }) {
         if (!name || !matricNumber || !password || !accountNumber) {
             return {
                 success: false,
@@ -159,8 +173,10 @@ class ClustiteDatabase extends SQLDataSource {
                         .returning('*')
                         .insert({
                             username: name,
+                            email,
                             matric_number,
                             account_number: accountNumber,
+                            bank_name: bankName
                         })
                         .then(user => {
                             return {
@@ -248,21 +264,21 @@ class ClustiteDatabase extends SQLDataSource {
 
     updateUserProfile(details) {
         const { userID, matricNumber, name, accountNumber, password } = details;
-        const password_hash = bcrypt.hashSync(password, 10);
+        // const password_hash = bcrypt.hashSync(password, 10);
         return this.knex.transaction(trx => {
             trx('login')
                 .where('matric_number', matricNumber)
-                .update({ password_hash }, ['password_hash'])
+                // .update({ password_hash }, ['password_hash'])
                 .then(password_hash => {
                     return trx('users')
                         .where('id', userID)
                         .update({ username: name, account_number: accountNumber }, ['*'])
                         .then(data => {
-                            console.log({ ...data[0], ...password_hash[0] })
                             return {
                                 success: true,
                                 message: `Account updated`,
-                                user: () => this.userReducer({ ...data[0], ...password_hash[0] })
+                                user: () => this.userReducer({ ...data[0] })
+                                // user: () => this.userReducer({ ...data[0], ...password_hash[0] })
                             }
                         })
                         .then(trx.commit)
@@ -345,15 +361,17 @@ class ClustiteDatabase extends SQLDataSource {
             reward
         }
     }
-    userReducer({ id, username, password_hash, matric_number, account_number }) {
+    userReducer({ id, username, email, password_hash, matric_number, account_number, bank_name }) {
         let commitmentGroups = () => this.getJoinedCommitmentGroups(id)
         let scores = () => this.getScores(id)
         return {
             id,
             name: username,
+            email,
             matricNumber: matric_number,
-            password: password_hash,
+            // password: password_hash,
             accountNumber: account_number,
+            bankName: bank_name,
             commitmentGroups,
             scores
         }

@@ -4,9 +4,11 @@ const typeDefs = gql`
     type User {
         id: ID!
         name: String!
+        email: String!
         matricNumber: String!
+        accountNumber: Int!
+        bankName: String!
         password: String!
-        accountNumber: String!
         commitmentGroups:[CommitmentGroup]!
         scores: [Score]!
     }
@@ -53,19 +55,22 @@ const typeDefs = gql`
 
     type Query {
         allCommitmentGroups: CommitmentGrouporString
-        joinedCommitmentGroups(participantId: ID): [CommitmentGroup]!
-        commitmentGroupParticipants(commitmentGroupId: ID!): [User]!
-        clusterParticipants(clusterId: ID!): [User]
-        clusters(commitmentGroupId: ID!): [Cluster]!
+        joinedCommitmentGroups(userID: ID): [CommitmentGroup]!
+        recommendedCommitmentGroups(userID: ID): [CommitmentGroup]!
+        commitmentGroupParticipants(commitmentGroupID: ID!): [User]!
+        clusterParticipants(clusterID: ID!): [User]
+        clusters(commitmentGroupID: ID!): [Cluster]!
         getUser(userID: ID!): User
     }
 
     type Mutation {
         registerAccount(
-            name: String! 
-            matricNumber: String! 
-            password: String! 
-            accountNumber: String!
+            name: String!
+            email: String!
+            matricNumber: String!
+            accountNumber: Int!
+            bankName: String!
+            password: String!
         ): AccountRelatedResponse
 
         login(

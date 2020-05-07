@@ -17,20 +17,24 @@ module.exports = {
             })
         },
 
-        joinedCommitmentGroups: (_, { participantId }, context) => {
-            return context.db.getJoinedCommitmentGroups(participantId)
+        joinedCommitmentGroups: (_, { userID }, context) => {
+            return context.db.getJoinedCommitmentGroups(userID)
         },
 
-        commitmentGroupParticipants: (_, { commitmentGroupId }, context) => {
-            return context.db.getCommitmentGroupMembers(commitmentGroupId)
+        recommendedCommitmentGroups: (_, { userID }, context) => {
+            return context.db.getRecommendedCommitmentGroups(userID)
         },
 
-        clusterParticipants: (_, { clusterId }, context) => {
-            return context.db.getClusterMembers(clusterId)
+        commitmentGroupParticipants: (_, { commitmentGroupID }, context) => {
+            return context.db.getCommitmentGroupMembers(commitmentGroupID)
         },
 
-        clusters: (_, { commitmentGroupId }, context) => {
-            return context.db.getClusters(commitmentGroupId)
+        clusterParticipants: (_, { clusterID }, context) => {
+            return context.db.getClusterMembers(clusterID)
+        },
+
+        clusters: (_, { commitmentGroupID }, context) => {
+            return context.db.getClusters(commitmentGroupID)
         },
         getUser: (_, { userID }, context) => {
             return context.db.getUser(userID)

@@ -2,13 +2,11 @@ const { ApolloServer } = require('apollo-server');
 const typeDefs = require('./schemas/schema')
 const resolvers = require('./resolvers')
 const knex = require("knex");
-const express = require('express')
 // const redis = require('redis')
 const redis = require("async-redis");
 
 const ClustiteDatabase = require('./datasources/clustite-database')
 
-const app = express();
 
 const redisClient = redis.createClient(process.env.REDIS_URI)
 
@@ -27,6 +25,7 @@ const corsOption = {
 }
 
 const server = new ApolloServer({
+    cors: corsOption,
     typeDefs,
     resolvers,
     context: ({ req }) => ({
@@ -39,7 +38,7 @@ const server = new ApolloServer({
     })
 })
 
-server.applyMiddleware({ app, cors: corsOption })
+// server.applyMiddleware({ cors: corsOption })
 
 server.listen().then(({ url }) => {
     console.log(`🚀 Server ready at ${url}`);

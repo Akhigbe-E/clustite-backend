@@ -16,7 +16,12 @@ module.exports = {
                 return { commitmentGroups: () => context.db.getAllCommitmentGroups() }
             })
         },
-
+        commitmentGroup: (_, { commitmentGroupID }, context) => {
+            // return context.authScope().then(({ id }) => {
+            //     if (!id) return { status: "unauthorized" }
+            return context.db.getCommitmentGroup(commitmentGroupID)
+            // })
+        },
         joinedCommitmentGroups: (_, { userID }, context) => {
             return context.db.getJoinedCommitmentGroups(userID)
         },
@@ -51,11 +56,17 @@ module.exports = {
         createCommitmentGroup: (_, details, context) => {
             return context.db.createCommitmentGroup(details)
         },
+        createCluster: (_, details, context) => {
+            return context.db.createCluster(details)
+        },
         enterScore: (_, details, context) => {
             return context.db.enterScore(details)
         },
         joinCommitmentGroup: (_, details, context) => {
             return context.db.joinCommitmentGroup(details)
+        },
+        joinCluster: (_, details, context) => {
+            return context.db.joinCluster(details)
         },
         updateProfile: (_, details, context) => {
             return context.db.updateUserProfile(details)

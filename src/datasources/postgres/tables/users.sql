@@ -7,7 +7,8 @@ CREATE TABLE users
     email VARCHAR(100) UNIQUE NOT NULL,
     matric_number VARCHAR(15) UNIQUE NOT NULL,
     account_number VARCHAR(30) UNIQUE NOT NULL,
-    bank_name VARCHAR(100) NOT NULL
+    bank_name VARCHAR(100) NOT NULL,
+    cgpa DECIMAL(4,2) NOT NULL
 );
 
 COMMIT;

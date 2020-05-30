@@ -32,6 +32,18 @@ class ClustiteDatabase extends SQLDataSource {
                 }) : []
             })
     }
+    getCommitmentGroup(commitmentGroupID) {
+        return this.knex
+            .select('*')
+            .from("commitment_groups")
+            .where('id', commitmentGroupID)
+            .then(data => {
+                console.log(data)
+                return Array.isArray(data) ? data.map(group => {
+                    return this.commitmentGroupReducer(group)
+                }) : []
+            })
+    }
     getCommitmentGroupMembers(commitmentGroupID) {
         return this.getIDOfMembersOfCommitment(commitmentGroupID)
             .then(userIDsObjs => {
@@ -55,23 +67,30 @@ class ClustiteDatabase extends SQLDataSource {
             let joinedCommitmentGroupIDs = commitmentGroupIDObjs.map(({ commitment_group_id }) => {
                 return commitment_group_id
             })
+            // console.log(joinedCommitmentGroupIDs)
             return this.getCommitmentGroupWhereNotID(joinedCommitmentGroupIDs)
         })
     }
     getCommitmentGroupWhereNotID(IDs) {
-        // const integerIDs = IDs.map(ID => parseInt(ID, 10))
-        // console.log(integerIDs)
-        return this.knex.select('*').from("commitment_groups").whereNotIn('id', [...IDs]).andWhere('group_type', 'public')
+        if (IDs.length === 0) {
+            return this.getAllCommitmentGroups()
+        }
+        // return this.knex.select('*').from("commitment_groups").whereNotIn('id', [...IDs]).andWhere('group_type', 'public').then(data => {
+        return this.knex.select('*').from("commitment_groups").whereNotIn('id', [...IDs]).then(data => {
+            return Array.isArray(data) ? data.map(group => {
+                return this.commitmentGroupReducer(group)
+            }) : []
+        })
     }
 
     //Commitment => Mutation
     createCommitmentGroup(details) {
-        console.log(details)
         const {
             ownerID,
             groupName,
             typeOfGroup,
             groupJoiningCode,
+            numberOfClusters,
             commitmentName,
             commitmentDescription,
             stake } = details
@@ -81,6 +100,7 @@ class ClustiteDatabase extends SQLDataSource {
             group_name: groupName,
             group_type: typeOfGroup,
             group_joining_code: groupJoiningCode,
+            number_of_clusters: numberOfClusters,
             commitment_name: commitmentName,
             commitment_description: commitmentDescription,
             stake
@@ -165,8 +185,8 @@ class ClustiteDatabase extends SQLDataSource {
 
 
     //// Mutation
-    registerAccount({ name, email, matricNumber, accountNumber, bankName, password }) {
-        if (!name || !matricNumber || !password || !accountNumber) {
+    registerAccount({ name, email, matricNumber, accountNumber, bankName, cgpa, password }) {
+        if (!name || !matricNumber || !password || !accountNumber || !cgpa) {
             return {
                 success: false,
                 message: 'Kindly fill all fields',
@@ -191,7 +211,8 @@ class ClustiteDatabase extends SQLDataSource {
                             email,
                             matric_number,
                             account_number: accountNumber,
-                            bank_name: bankName
+                            bank_name: bankName,
+                            cgpa: cgpa
                         })
                         .then(user => {
                             return this.createSession(this.redisClient, user[0])
@@ -247,17 +268,24 @@ class ClustiteDatabase extends SQLDataSource {
                             return {
                                 success: false,
                                 message: "Login failed",
-                                token: null,
-                                userID: null
+                                // token: null,
+                                // userID: null
                             }
                         });
                 } else {
                     return {
                         success: false,
                         message: "Login Failed",
-                        token: null,
-                        userID: null
+                        // token: null,
+                        // userID: null
                     }
+                }
+            }).catch(e => {
+                return {
+                    success: false,
+                    message: "Login Failed",
+                    // token: null,
+                    // userID: null
                 }
             })
     }
@@ -313,6 +341,44 @@ class ClustiteDatabase extends SQLDataSource {
             .then(data => Array.isArray(data) ? data.map(data => this.clusterReducer(data)) : [])
     }
 
+    createCluster(details) {
+        console.log(details)
+        const { commitmentGroupID, clusterName, clusterScore, reward } = details
+        return this.knex('clusters')
+            .insert({ commitment_group_id: commitmentGroupID, cluster_name: clusterName, cluster_score: clusterScore, reward })
+            .returning('*')
+            .then(data => {
+                return {
+                    success: true,
+                    message: 'Cluster created',
+                    cluster: () => this.clusterReducer({ ...data[0] })
+                }
+            }).catch(err => {
+                return {
+                    success: false,
+                    message: 'Cluster not created',
+                    cluster: null
+                }
+            })
+    }
+
+    joinCluster(details) {
+        const { userID, clusterID } = details;
+        return this.knex('user_cluster_ids')
+            .insert({ user_id: userID, cluster_id: clusterID })
+            .returning('cluster_id')
+            .then(data => {
+                return {
+                    success: true,
+                    addedID: data[0]
+                }
+            }).catch(err => {
+                return {
+                    success: false,
+                    addedID: null
+                }
+            })
+    }
 
 
     ////////////////////// SCORE //////////////////////
@@ -361,7 +427,7 @@ class ClustiteDatabase extends SQLDataSource {
             reward
         }
     }
-    userReducer({ id, username, email, password_hash, matric_number, account_number, bank_name }) {
+    userReducer({ id, username, email, password_hash, matric_number, account_number, bank_name, cgpa }) {
         let commitmentGroups = () => this.getJoinedCommitmentGroups(id)
         let scores = () => this.getScores(id)
         return {
@@ -372,12 +438,13 @@ class ClustiteDatabase extends SQLDataSource {
             // password: password_hash,
             accountNumber: account_number,
             bankName: bank_name,
+            cgpa,
             commitmentGroups,
             scores
         }
     }
     commitmentGroupReducer(data) {
-        const { id, owner_id, group_name, group_type, group_joining_code, commitment_name, commitment_description, stake } = data;
+        const { id, owner_id, group_name, group_type, group_joining_code, number_of_clusters, commitment_name, commitment_description, stake } = data;
         let groupMembers = () => this.getCommitmentGroupMembers(id)
         let clusters = () => this.getClusters(id)
         return {
@@ -386,6 +453,7 @@ class ClustiteDatabase extends SQLDataSource {
             groupName: group_name,
             typeOfGroup: group_type,
             groupJoiningCode: group_joining_code,
+            numberOfClusters: number_of_clusters,
             groupMembers,
             clusters,
             commitmentName: commitment_name,

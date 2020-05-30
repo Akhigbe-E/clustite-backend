@@ -11,6 +11,19 @@ const typeDefs = gql`
         password: String!
         commitmentGroups:[CommitmentGroup]!
         scores: [Score]!
+        cgpa:Float!
+    }
+    input UserInput {
+        id: ID!
+        name: String!
+        email: String!
+        matricNumber: String!
+        accountNumber: String!
+        bankName: String!
+        password: String!
+        commitmentGroups:[CommitmentGroupInput]!
+        scores: [ScoreInput]!
+        cgpa:Float!
     }
 
     type CommitmentGroup {
@@ -19,8 +32,23 @@ const typeDefs = gql`
         groupName: String!
         typeOfGroup: String!
         groupJoiningCode: String
+        numberOfClusters:Int!
         groupMembers: [User]!
         clusters: [Cluster]!
+        commitmentName: String!
+        commitmentDescription: String!
+        stake: Int!
+
+    }
+    input CommitmentGroupInput {
+        id: ID!
+        ownerID: ID!
+        groupName: String!
+        typeOfGroup: String!
+        groupJoiningCode: String
+        numberOfClusters:Int!
+        groupMembers: [UserInput]!
+        clusters: [ClusterInput]!
         commitmentName: String!
         commitmentDescription: String!
         stake: Int!
@@ -36,8 +64,23 @@ const typeDefs = gql`
         clusterScore: Int!
         reward: Int!
     }
+    input ClusterInput {
+        id:ID!
+        commitmentGroupID: ID!
+        clusterName: String!
+        clusterMembers: [UserInput!]!
+        clusterHeadMember: UserInput!
+        clusterScore: Int!
+        reward: Int!
+    }
 
     type Score {
+        id: ID!
+        commitmentGroupID: ID!
+        clusterID: ID!
+        points: Int!
+    }
+    input ScoreInput {
         id: ID!
         commitmentGroupID: ID!
         clusterID: ID!
@@ -55,6 +98,7 @@ const typeDefs = gql`
 
     type Query {
         allCommitmentGroups: CommitmentGrouporString
+        commitmentGroup(commitmentGroupID: ID!): [CommitmentGroup]!
         joinedCommitmentGroups(userID: ID): [CommitmentGroup]!
         recommendedCommitmentGroups(userID: ID): [CommitmentGroup]!
         commitmentGroupParticipants(commitmentGroupID: ID!): [User]!
@@ -62,7 +106,6 @@ const typeDefs = gql`
         clusters(commitmentGroupID: ID!): [Cluster]!
         getUser(userID: ID!): User
     }
-
     type Mutation {
         registerAccount(
             name: String!
@@ -71,6 +114,7 @@ const typeDefs = gql`
             accountNumber: String!
             bankName: String!
             password: String!
+            cgpa:Float!
         ): Session!
 
         login(
@@ -78,12 +122,21 @@ const typeDefs = gql`
             password: String! 
         ): Session!
 
+        createCluster(
+            commitmentGroupID: ID!
+            clusterName: String!
+            # clusterMembers: [UserInput]!
+            # clusterHeadMember: UserInput!
+            clusterScore: Int!
+            reward: Int!
+        ): ClusterRelatedResponse
 
         createCommitmentGroup(
             ownerID: ID!
             groupName: String!,
             typeOfGroup: String!,
             groupJoiningCode: String,
+            numberOfClusters:Int!
             commitmentName: String!,
             commitmentDescription: String!,
             stake: Int!
@@ -95,6 +148,8 @@ const typeDefs = gql`
             matricNumber: String!
             accountNumber: String
             password: String
+            # cgpa:Int!
+
         ): AccountRelatedResponse!
 
         enterScore(
@@ -108,9 +163,19 @@ const typeDefs = gql`
             userID: ID!
             commitmentGroupID: ID!
         ): JoinGroupResponse!
+
+        joinCluster(
+            userID: ID!
+            clusterID: ID!
+        ): JoinClusterResponse!
     }
 
     type JoinGroupResponse {
+        success: Boolean!
+        addedID: ID
+    }
+
+    type JoinClusterResponse {
         success: Boolean!
         addedID: ID
     }
@@ -119,6 +184,11 @@ const typeDefs = gql`
         success: Boolean!
         message: String!
         commitmentGroup: CommitmentGroup
+    }
+    type ClusterRelatedResponse {
+        success: Boolean!
+        message: String!
+        cluster: Cluster
     }
 
     type AccountRelatedResponse {

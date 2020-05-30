@@ -19,13 +19,13 @@ const knexInstance = knex({
 
 const db = new ClustiteDatabase(knexInstance, redisClient);
 
-const corsOption = {
-    origin: '*',
-    credentials: true
-}
+// const corsOption = {
+//     origin: '*',
+//     credentials: true
+// }
 
 const server = new ApolloServer({
-    cors: corsOption,
+    cors: true,
     typeDefs,
     resolvers,
     context: ({ req }) => ({

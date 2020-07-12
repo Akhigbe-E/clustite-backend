@@ -93,7 +93,8 @@ class ClustiteDatabase extends SQLDataSource {
             numberOfClusters,
             commitmentName,
             commitmentDescription,
-            stake } = details
+            stake,
+            hasGivenReward } = details
 
         return this.knex('commitment_groups').insert({
             owner_id: ownerID,
@@ -103,7 +104,8 @@ class ClustiteDatabase extends SQLDataSource {
             number_of_clusters: numberOfClusters,
             commitment_name: commitmentName,
             commitment_description: commitmentDescription,
-            stake
+            stake,
+            has_given_reward: hasGivenReward
         }, ['*'])
             .then(commitmentGroup => {
                 return {
@@ -138,6 +140,31 @@ class ClustiteDatabase extends SQLDataSource {
             })
     }
 
+    giveReward({ hasGivenReward, reward, clusterID, commitmentGroupID }) {
+        return this.knex.transaction(trx => {
+            trx('commitment_groups')
+                .where({ id: commitmentGroupID })
+                .update({ has_given_reward: hasGivenReward })
+                .then(data => {
+                    return trx('clusters')
+                        .where({ id: clusterID })
+                        .update({ reward }, ['reward'])
+                        .then(data => {
+                            return {
+                                success: true,
+                                ...data[0]
+                            }
+                        })
+                        .then(trx.commit)
+                        .catch(trx.rollback)
+                }).catch(err => {
+                    return {
+                        success: false
+                    }
+                })
+        })
+    }
+
 
     ////////////////////// ID //////////////////////
 
@@ -160,7 +187,7 @@ class ClustiteDatabase extends SQLDataSource {
             .then(() => {
                 return {
                     success: true,
-                    message: "Operation successful",
+                    message: "Login successful",
                     userID: id,
                     token
                 }
@@ -343,9 +370,9 @@ class ClustiteDatabase extends SQLDataSource {
 
     createCluster(details) {
         console.log(details)
-        const { commitmentGroupID, clusterName, clusterScore, reward } = details
+        const { commitmentGroupID, clusterName, clusterScore, reward, clusterHeadMemberID } = details
         return this.knex('clusters')
-            .insert({ commitment_group_id: commitmentGroupID, cluster_name: clusterName, cluster_score: clusterScore, reward })
+            .insert({ commitment_group_id: commitmentGroupID, cluster_name: clusterName, cluster_score: clusterScore, reward, cluster_head_member_id: clusterHeadMemberID })
             .returning('*')
             .then(data => {
                 return {
@@ -397,11 +424,10 @@ class ClustiteDatabase extends SQLDataSource {
             .insert({ user_id: userID, commitment_group_id: commitmentGroupID, cluster_id: clusterID, points })
             .returning('*')
             .then(score => {
-                console.log(score)
                 return {
                     success: true,
                     message: 'score entered',
-                    score: () => this.scoreReducer(score)
+                    score: () => this.scoreReducer(score[0])
                 }
             }).catch(err => {
                 return {
@@ -411,19 +437,42 @@ class ClustiteDatabase extends SQLDataSource {
                 }
             })
     }
+    calculateClusterScore({ commitmentGroupID, clusterID, points }) {
+        return this.knex('clusters')
+            .where({ commitment_group_id: commitmentGroupID, id: clusterID })
+            .update({
+                cluster_score: points
+            }, ['*'])
+            .then(score => {
+                console.log(score)
+                return {
+                    success: true,
+                    message: 'score calculated',
+                    score: () => this.scoreReducer(score[0])
+                }
+            }).catch(err => {
+                return {
+                    success: false,
+                    message: 'score not calculated',
+                    score: null
+                }
+            })
+    }
 
 
 
     //////////////////////////// REDUCER ////////////////////////////////
 
-    clusterReducer({ id, commitment_group_id, cluster_name, cluster_score, reward }) {
-        let clusterMembers = () => this.getClusterMembers(id)
+    clusterReducer({ id, commitment_group_id, cluster_name, cluster_score, reward, cluster_head_member_id }) {
+        let clusterMembers = () => this.getClusterMembers(id);
+        let clusterHeadMember = () => this.getUser(cluster_head_member_id)
         return {
             id,
             commitmentGroupID: commitment_group_id,
             clusterName: cluster_name,
             clusterScore: cluster_score,
             clusterMembers,
+            clusterHeadMember,
             reward
         }
     }
@@ -444,7 +493,7 @@ class ClustiteDatabase extends SQLDataSource {
         }
     }
     commitmentGroupReducer(data) {
-        const { id, owner_id, group_name, group_type, group_joining_code, number_of_clusters, commitment_name, commitment_description, stake } = data;
+        const { id, owner_id, group_name, group_type, group_joining_code, number_of_clusters, commitment_name, commitment_description, stake, has_given_reward } = data;
         let groupMembers = () => this.getCommitmentGroupMembers(id)
         let clusters = () => this.getClusters(id)
         return {
@@ -458,15 +507,16 @@ class ClustiteDatabase extends SQLDataSource {
             clusters,
             commitmentName: commitment_name,
             commitmentDescription: commitment_description,
-            stake
+            stake,
+            hasGivenReward: has_given_reward
         }
     }
-    scoreReducer({ id, user_id, commitment_group_id, cluster_id, points }) {
+    scoreReducer({ id, user_id, commitment_group_id, cluster_id, points, cluster_score }) {
         return {
             id,
             commitmentGroupID: commitment_group_id,
             clusterID: cluster_id,
-            points
+            points: points || cluster_score
         }
     }
 }

@@ -38,6 +38,7 @@ const typeDefs = gql`
         commitmentName: String!
         commitmentDescription: String!
         stake: Int!
+        hasGivenReward: Boolean!
 
     }
     input CommitmentGroupInput {
@@ -60,7 +61,7 @@ const typeDefs = gql`
         commitmentGroupID: ID!
         clusterName: String!
         clusterMembers: [User!]!
-        clusterHeadMember: User!
+        clusterHeadMember: User
         clusterScore: Int!
         reward: Int!
     }
@@ -126,7 +127,7 @@ const typeDefs = gql`
             commitmentGroupID: ID!
             clusterName: String!
             # clusterMembers: [UserInput]!
-            # clusterHeadMember: UserInput!
+            clusterHeadMemberID: ID!
             clusterScore: Int!
             reward: Int!
         ): ClusterRelatedResponse
@@ -139,7 +140,8 @@ const typeDefs = gql`
             numberOfClusters:Int!
             commitmentName: String!,
             commitmentDescription: String!,
-            stake: Int!
+            stake: Int!,
+            hasGivenReward: Boolean
         ): CommitmentGroupRelatedResponse!
 
         updateProfile(
@@ -159,6 +161,12 @@ const typeDefs = gql`
             points: Int!
         ): ScoreEnterResponse!
 
+        calculateClusterScore(
+            commitmentGroupID: ID!
+            clusterID: ID!
+            points: Int!
+        ):ScoreEnterResponse!
+
         joinCommitmentGroup(
             userID: ID!
             commitmentGroupID: ID!
@@ -168,8 +176,20 @@ const typeDefs = gql`
             userID: ID!
             clusterID: ID!
         ): JoinClusterResponse!
+
+        giveReward(
+            hasGivenReward: Boolean!
+            reward: Int!
+            clusterID: ID!
+            commitmentGroupID: ID!
+        ):RewardResponse!
     }
 
+    type RewardResponse {
+        success: Boolean!
+        reward: Int!
+
+    }
     type JoinGroupResponse {
         success: Boolean!
         addedID: ID

@@ -62,6 +62,9 @@ module.exports = {
         enterScore: (_, details, context) => {
             return context.db.enterScore(details)
         },
+        calculateClusterScore: (_, details, context) => {
+            return context.db.calculateClusterScore(details)
+        },
         joinCommitmentGroup: (_, details, context) => {
             return context.db.joinCommitmentGroup(details)
         },
@@ -71,5 +74,9 @@ module.exports = {
         updateProfile: (_, details, context) => {
             return context.db.updateUserProfile(details)
         },
+        giveReward: (_, details, context) => {
+            return context.db.giveReward(details)
+        },
+
     }
 }
